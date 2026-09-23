@@ -1,0 +1,87 @@
+### Health Check
+GET http://localhost:3000/
+
+###
+
+### Database Health Check
+GET http://localhost:3000/health
+
+###
+
+### Test Signup Email (creates user in database)
+POST http://localhost:3000/api/mail/signup
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "name": "John Doe",
+  "password": "securePassword123"
+}
+
+###
+
+### Test Signup Email (without password)
+POST http://localhost:3000/api/mail/signup
+Content-Type: application/json
+
+{
+  "email": "user2@example.com",
+  "name": "Jane Smith"
+}
+
+###
+
+### Test Forgot Password Email (generates token in database)
+POST http://localhost:3000/api/mail/forgot-password
+Content-Type: application/json
+
+{
+  "email": "test@example.com"
+}
+
+###
+
+### Verify Reset Token (replace TOKEN_HERE with actual token)
+GET http://localhost:3000/api/auth/verify-token/TOKEN_HERE
+
+###
+
+### Reset Password (replace TOKEN_HERE with actual token)
+POST http://localhost:3000/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "TOKEN_HERE",
+  "newPassword": "newSecurePassword123"
+}
+
+###
+
+### Test Duplicate Signup (should fail)
+POST http://localhost:3000/api/mail/signup
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "name": "Duplicate User"
+}
+
+###
+
+### Test Invalid Email Format
+POST http://localhost:3000/api/mail/signup
+Content-Type: application/json
+
+{
+  "email": "invalid-email"
+}
+
+###
+
+### Test Missing Email
+POST http://localhost:3000/api/mail/forgot-password
+Content-Type: application/json
+
+{
+  "name": "Test User"
+}
