@@ -1,30 +1,70 @@
-const { createTransporter } = require('../config/mailConfig');
+const { getMailConfig } = require('../config/mailConfig');
 
 /**
- * Send email using configured SMTP
+ * Send email via HTTP Mail Service API
+ * Replaces direct SMTP to prevent connection hangs and timeouts
  */
-const sendEmail = async (to, subject, htmlContent, textContent = '') => {
+const sendEmail = async (to, subject, htmlContent, textContent = '', fromEmail = null, fromName = null) => {
   try {
-    const transporter = createTransporter();
+    const config = getMailConfig();
 
-    const mailOptions = {
-      from: `"${process.env.SENDER_NAME}" <${process.env.SENDER_EMAIL}>`,
+    // Build request payload
+    const payload = {
       to: to,
       subject: subject,
-      text: textContent,
-      html: htmlContent
+      html: htmlContent,
+      fromName: fromName || config.senderName,
+      async: config.async // Non-blocking: returns 202 immediately
     };
 
-    const info = await transporter.sendMail(mailOptions);
+    // Add optional from email
+    if (fromEmail || config.senderEmail) {
+      payload.from = fromEmail || config.senderEmail;
+    }
+
+    // Add optional text content
+    if (textContent) {
+      payload.text = textContent;
+    }
+
+    // Build request headers
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    if (config.apiKey) {
+      headers['Authorization'] = `Bearer ${config.apiKey}`;
+    }
+
+    // Send HTTP request to mail service
+    const response = await fetch(`${config.apiUrl}/api/mail/send`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload)
+    });
+
+    // Handle response
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.error || errorData.message || `Mail service responded with status ${response.status}`;
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
     
-    console.log('Email sent successfully:', info.messageId);
+    console.log('✓ Email sent successfully via Mail Service API');
+    console.log(`  To: ${to}`);
+    console.log(`  Subject: ${subject}`);
+    console.log(`  Message ID: ${data.messageId || 'N/A'}`);
+    
     return {
       success: true,
-      messageId: info.messageId,
-      message: 'Email sent successfully'
+      messageId: data.messageId || data.id || 'async-queued',
+      message: 'Email sent successfully',
+      data: data
     };
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('✗ Error sending email via Mail Service API:', error.message);
     throw new Error(`Failed to send email: ${error.message}`);
   }
 };

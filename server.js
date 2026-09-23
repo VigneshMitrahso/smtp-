@@ -22,8 +22,9 @@ app.use('/api/mail', mailRoutes);
 // Health check endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Mail Service API is running (SMTP TEST MODE)',
-    mode: 'SMTP Testing Only - Database operations disabled',
+    message: 'Mail Service API is running (HTTP API MODE)',
+    mode: 'HTTP Mail Service API - Database operations disabled',
+    mailServiceUrl: process.env.MAIL_SERVICE_URL,
     endpoints: {
       signup: 'POST /api/mail/signup',
       forgotPassword: 'POST /api/mail/forgot-password'
@@ -35,7 +36,8 @@ app.get('/', (req, res) => {
 app.get('/health', async (req, res) => {
   res.json({
     status: 'healthy',
-    mode: 'SMTP Testing Only',
+    mode: 'HTTP Mail Service API',
+    mailServiceUrl: process.env.MAIL_SERVICE_URL,
     timestamp: new Date().toISOString()
   });
 });
@@ -80,11 +82,12 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`\n${'='.repeat(50)}`);
   console.log(`🚀 Mail Service running on port ${PORT}`);
-  console.log(`📧 Mode: SMTP TESTING ONLY`);
+  console.log(`📧 Mode: HTTP MAIL SERVICE API`);
   console.log(`⚠️  Database operations: DISABLED`);
   console.log(`${'='.repeat(50)}`);
-  console.log(`SMTP Host: ${process.env.SMTP_HOST}`);
+  console.log(`Mail Service URL: ${process.env.MAIL_SERVICE_URL}`);
   console.log(`Sender Email: ${process.env.SENDER_EMAIL}`);
+  console.log(`Auth: ${process.env.MAIL_SERVICE_API_KEY ? '✓ API Key configured' : '✗ No API Key'}`);
   console.log(`${'='.repeat(50)}\n`);
 });
 

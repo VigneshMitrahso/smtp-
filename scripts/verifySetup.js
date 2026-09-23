@@ -1,5 +1,5 @@
 const { Pool } = require('pg');
-const nodemailer = require('nodemailer');
+const { verifyConnection } = require('../config/mailConfig');
 require('dotenv').config();
 
 const colors = {
@@ -71,28 +71,38 @@ async function verifyDatabase() {
   }
 }
 
-async function verifySMTP() {
-  log.info('Checking SMTP configuration...');
+async function verifyMailServiceAPI() {
+  log.info('Checking Mail Service API configuration...');
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
+    const apiUrl = process.env.MAIL_SERVICE_URL;
+    const apiKey = process.env.MAIL_SERVICE_API_KEY;
 
-    await transporter.verify();
-    log.success('SMTP connection successful');
-    log.info(`SMTP Host: ${process.env.SMTP_HOST}`);
-    log.info(`SMTP User: ${process.env.SMTP_USER}`);
-    return true;
+    if (!apiUrl) {
+      log.error('MAIL_SERVICE_URL is not configured');
+      return false;
+    }
+
+    if (!apiKey) {
+      log.warning('MAIL_SERVICE_API_KEY is not set - requests may fail');
+    }
+
+    log.info(`Mail Service URL: ${apiUrl}`);
+    log.info(`API Key: ${apiKey ? '✓ Configured' : '✗ Not set'}`);
+
+    // Use the verifyConnection function from mailConfig
+    const connected = await verifyConnection();
+    
+    if (connected) {
+      log.success('Mail Service API connection successful');
+      return true;
+    } else {
+      log.error('Failed to connect to Mail Service API');
+      return false;
+    }
 
   } catch (error) {
-    log.error(`SMTP error: ${error.message}`);
+    log.error(`Mail Service API error: ${error.message}`);
     return false;
   }
 }
@@ -102,10 +112,8 @@ function verifyEnvironment() {
 
   const required = [
     'DATABASE_URL',
-    'SMTP_HOST',
-    'SMTP_PORT',
-    'SMTP_USER',
-    'SMTP_PASS',
+    'MAIL_SERVICE_URL',
+    'MAIL_SERVICE_API_KEY',
     'SENDER_EMAIL',
     'SENDER_NAME'
   ];
@@ -135,12 +143,12 @@ async function main() {
   const dbOk = await verifyDatabase();
   console.log('');
 
-  const smtpOk = await verifySMTP();
+  const mailApiOk = await verifyMailServiceAPI();
   console.log('');
 
   console.log(colors.blue + '='.repeat(50) + colors.reset);
   
-  if (envOk && dbOk && smtpOk) {
+  if (envOk && dbOk && mailApiOk) {
     log.success('All checks passed! Your mail service is ready to use.');
     console.log('\nStart the server with: npm start');
   } else {
@@ -152,8 +160,9 @@ async function main() {
     if (!dbOk) {
       console.log('→ Run: npm run setup-db');
     }
-    if (!smtpOk) {
-      console.log('→ Verify SMTP credentials in .env');
+    if (!mailApiOk) {
+      console.log('→ Verify Mail Service API URL and ensure the service is running');
+      console.log('→ Check API key in .env');
     }
   }
   

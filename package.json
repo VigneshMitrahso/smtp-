@@ -9,17 +9,22 @@
     "setup-db": "node scripts/setupDatabase.js",
     "verify": "node scripts/verifySetup.js"
   },
-  "keywords": ["mail", "nodemailer", "smtp"],
+  "keywords": [
+    "mail",
+    "nodemailer",
+    "smtp"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "bcrypt": "^5.1.1",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.6",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "nodemailer": "^6.9.7",
-    "dotenv": "^16.3.1",
-    "body-parser": "^1.20.2",
-    "pg": "^8.11.3",
-    "bcrypt": "^5.1.1"
+    "pg": "^8.11.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"
